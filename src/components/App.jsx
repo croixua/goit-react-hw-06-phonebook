@@ -1,18 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
-import { nanoid } from 'nanoid';
+import { useEffect, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import Container from './Container/Container';
 import ContactForm from './ContactForm/ContactForm';
 import ContactList from './ContactList/ContactList';
 import Filter from './Filter/Filter';
+import {
+  contactLoading,
+  contactAdd,
+  contactDelete,
+  changeFilter,
+} from 'redux/phonebook/phonebook-actions.js';
+import { getContacts, getFilter } from 'redux/phonebook/phonebook-selectors';
 
 export default function App() {
-  const [contacts, setContacts] = useState([
-    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-  ]);
-  const [filter, setFilter] = useState('');
+  const contacts = useSelector(getContacts);
+  const filter = useSelector(getFilter);
+  const dispatch = useDispatch();
   const firstRender = useRef(true);
 
   useEffect(() => {
@@ -20,7 +23,7 @@ export default function App() {
     const parsedContacts = JSON.parse(getContacts);
 
     if (parsedContacts) {
-      setContacts(parsedContacts);
+      dispatch(contactLoading(parsedContacts));
     }
   }, []);
 
@@ -33,40 +36,33 @@ export default function App() {
     localStorage.setItem('contacts', JSON.stringify(contacts));
   }, [contacts]);
 
-  const checkDuplicateName = name => {
-    return contacts.filter(contact => contact.name === name);
-  };
+  const checkDuplicateName = name =>
+    contacts.find(contact => contact.name === name);
 
   const formSubmitHandler = (name, number) => {
-    const checkDuplicate = checkDuplicateName(name);
-
-    if (checkDuplicate.length > 0)
+    if (checkDuplicateName(name))
       return alert(
-        'This contact already exists, please enter a different name'
+        'This contact already exists, please enter a different name',
       );
 
-    const contact = {
-      id: nanoid(),
-      name,
-      number,
-    };
-
-    setContacts([...contacts, contact]);
+    dispatch(contactAdd(name, number));
   };
 
   const onDelete = id => {
     const filtredContacts = contacts.filter(contact => contact.id !== id);
 
-    setContacts(filtredContacts);
+    dispatch(contactDelete(filtredContacts));
   };
 
-  const changeFilter = e => setFilter(e.currentTarget.value);
+  const handlerFilter = e => {
+    dispatch(changeFilter(e.currentTarget.value));
+  };
 
   const getVisibleContact = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedFilter)
+      contact.name.toLowerCase().includes(normalizedFilter),
     );
   };
 
@@ -78,7 +74,7 @@ export default function App() {
       <ContactForm onSubmit={formSubmitHandler} />
 
       <h2>Contacts</h2>
-      <Filter changeFilter={changeFilter} filter={filter} />
+      <Filter handlerFilter={handlerFilter} filter={filter} />
       <ContactList contacts={visibleContacts} onDelete={onDelete} />
     </Container>
   );
