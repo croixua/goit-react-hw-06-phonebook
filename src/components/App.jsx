@@ -10,11 +10,16 @@ import {
   contactDelete,
   changeFilter,
 } from 'redux/phonebook/phonebook-actions.js';
-import { getContacts, getFilter } from 'redux/phonebook/phonebook-selectors';
+import {
+  getContacts,
+  getFilter,
+  getVisibleContacts,
+} from 'redux/phonebook/phonebook-selectors';
 
 export default function App() {
   const contacts = useSelector(getContacts);
   const filter = useSelector(getFilter);
+  const visibleContacts = useSelector(getVisibleContacts);
   const dispatch = useDispatch();
   const firstRender = useRef(true);
 
@@ -54,27 +59,16 @@ export default function App() {
     dispatch(contactDelete(filtredContacts));
   };
 
-  const handlerFilter = e => {
-    dispatch(changeFilter(e.currentTarget.value));
-  };
-
-  const getVisibleContact = () => {
-    const normalizedFilter = filter.toLowerCase();
-
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedFilter),
-    );
-  };
-
-  const visibleContacts = getVisibleContact();
-
   return (
     <Container>
       <h1>Phonebook</h1>
       <ContactForm onSubmit={formSubmitHandler} />
 
       <h2>Contacts</h2>
-      <Filter handlerFilter={handlerFilter} filter={filter} />
+      <Filter
+        handlerFilter={e => dispatch(changeFilter(e.currentTarget.value))}
+        filter={filter}
+      />
       <ContactList contacts={visibleContacts} onDelete={onDelete} />
     </Container>
   );
